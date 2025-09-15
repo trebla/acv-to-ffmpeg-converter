@@ -54,8 +54,8 @@ Color correction underwater webcam
       <td align="center"><b>After</b></td>
     </tr>
     <tr>
-      <td><img src="examples/before.jpg" width="400" alt="Before"></td>
-      <td><img src="examples/after.jpg" width="400" alt="After"></td>
+      <td><img src="example/before.jpg" width="400" alt="Before"></td>
+      <td><img src="example/after.jpg" width="400" alt="After"></td>
     </tr>
   </table>
 </div>
