@@ -1,0 +1,797 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ACV to FFMPEG Converter</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        
+        .container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            max-width: 900px;
+            width: 100%;
+            padding: 40px;
+            animation: slideUp 0.5s ease-out;
+        }
+        
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 2.5em;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .subtitle {
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 1.1em;
+        }
+        
+        .upload-area {
+            border: 3px dashed #ddd;
+            border-radius: 15px;
+            padding: 40px;
+            text-align: center;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            background: #fafafa;
+        }
+        
+        .upload-area:hover {
+            border-color: #667eea;
+            background: #f5f5ff;
+        }
+        
+        .upload-area.dragover {
+            border-color: #667eea;
+            background: #f0f0ff;
+            transform: scale(1.02);
+        }
+        
+        .upload-icon {
+            font-size: 48px;
+            color: #667eea;
+            margin-bottom: 20px;
+        }
+        
+        .file-input {
+            display: none;
+        }
+        
+        .upload-label {
+            display: inline-block;
+            padding: 12px 30px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 30px;
+            cursor: pointer;
+            transition: transform 0.2s;
+            font-weight: 600;
+        }
+        
+        .upload-label:hover {
+            transform: scale(1.05);
+        }
+        
+        .debug-toggle {
+            margin-top: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .debug-toggle input[type="checkbox"] {
+            width: 20px;
+            height: 20px;
+            margin-right: 10px;
+            cursor: pointer;
+        }
+        
+        .results {
+            margin-top: 30px;
+            display: none;
+            animation: fadeIn 0.5s ease-out;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        
+        .result-section {
+            margin-bottom: 30px;
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            border-left: 4px solid #667eea;
+        }
+        
+        .result-section h2 {
+            color: #333;
+            margin-bottom: 15px;
+            font-size: 1.5em;
+        }
+        
+        .result-section h3 {
+            color: #555;
+            margin-bottom: 10px;
+            margin-top: 15px;
+            font-size: 1.2em;
+        }
+        
+        pre {
+            background: #2d2d2d;
+            color: #f8f8f2;
+            padding: 20px;
+            border-radius: 8px;
+            overflow-x: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+        
+        .command {
+            background: #2d2d2d;
+            color: #50fa7b;
+            padding: 20px;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            position: relative;
+            overflow-x: auto;
+        }
+        
+        .copy-btn {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: #50fa7b;
+            color: #2d2d2d;
+            border: none;
+            padding: 5px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: bold;
+            transition: background 0.2s;
+        }
+        
+        .copy-btn:hover {
+            background: #5af78e;
+        }
+        
+        .copy-btn.copied {
+            background: #ff79c6;
+        }
+        
+        .curve-info {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 10px;
+        }
+        
+        .curve-channel {
+            margin-bottom: 20px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 8px;
+        }
+        
+        .curve-channel h4 {
+            color: #667eea;
+            margin-bottom: 10px;
+        }
+        
+        .point-list {
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            color: #555;
+        }
+        
+        .point-item {
+            margin: 5px 0;
+            padding: 5px;
+            background: white;
+            border-radius: 4px;
+        }
+        
+        .error {
+            background: #fee;
+            color: #c33;
+            padding: 20px;
+            border-radius: 10px;
+            margin-top: 20px;
+            border-left: 4px solid #c33;
+        }
+        
+        .debug-output {
+            background: #2d2d2d;
+            color: #50fa7b;
+            padding: 20px;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            max-height: 400px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+            margin-top: 20px;
+        }
+        
+        .canvas-container {
+            margin-top: 20px;
+            text-align: center;
+        }
+        
+        canvas {
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            max-width: 100%;
+            height: auto;
+        }
+        
+        @media (max-width: 600px) {
+            .container {
+                padding: 20px;
+            }
+            
+            h1 {
+                font-size: 1.8em;
+            }
+            
+            .upload-area {
+                padding: 30px 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>ACV to FFMPEG Converter</h1>
+        <p class="subtitle">Convert Photoshop curve files to FFMPEG parameters</p>
+        
+        <div class="upload-area" id="uploadArea">
+            <div class="upload-icon">📊</div>
+            <input type="file" id="fileInput" class="file-input" accept=".acv">
+            <label for="fileInput" class="upload-label">Choose ACV File</label>
+            <p style="margin-top: 15px; color: #999;">or drag and drop file here</p>
+        </div>
+        
+        <div class="debug-toggle">
+            <label>
+                <input type="checkbox" id="debugMode">
+                Enable debug mode for detailed analysis
+            </label>
+        </div>
+        
+        <div id="results" class="results"></div>
+    </div>
+
+    <script>
+        class ACVDecoder {
+            constructor(arrayBuffer, debug = false) {
+                this.buffer = arrayBuffer;
+                this.view = new DataView(arrayBuffer);
+                this.position = 0;
+                this.debug = debug;
+                this.curves = [];
+                this.debugLog = [];
+            }
+            
+            log(message) {
+                if (this.debug) {
+                    this.debugLog.push(message);
+                    console.log(message);
+                }
+            }
+            
+            readShort() {
+                if (this.position + 2 > this.buffer.byteLength) {
+                    this.log(`Warning: Cannot read short at position ${this.position}, file size: ${this.buffer.byteLength}`);
+                    return null;
+                }
+                
+                const value = this.view.getUint16(this.position, false); // big-endian
+                this.log(`Read short at ${this.position}: ${value} (0x${value.toString(16).padStart(4, '0')})`);
+                this.position += 2;
+                return value;
+            }
+            
+            readInt() {
+                if (this.position + 4 > this.buffer.byteLength) {
+                    this.log(`Warning: Cannot read int at position ${this.position}`);
+                    return null;
+                }
+                
+                const value = this.view.getUint32(this.position, false); // big-endian
+                this.log(`Read int at ${this.position}: ${value} (0x${value.toString(16).padStart(8, '0')})`);
+                this.position += 4;
+                return value;
+            }
+            
+            analyzeFile() {
+                this.log('=== File Analysis ===');
+                this.log(`File size: ${this.buffer.byteLength} bytes`);
+                
+                // Show first 50 bytes in hex
+                const bytes = new Uint8Array(this.buffer.slice(0, Math.min(50, this.buffer.byteLength)));
+                let hexDump = 'First 50 bytes (hex):\n';
+                for (let i = 0; i < bytes.length; i++) {
+                    hexDump += bytes[i].toString(16).padStart(2, '0').toUpperCase() + ' ';
+                    if ((i + 1) % 16 === 0) hexDump += '\n';
+                }
+                this.log(hexDump);
+            }
+            
+            decode() {
+                if (this.debug) {
+                    this.analyzeFile();
+                }
+                
+                // Try different formats
+                let decoded = false;
+                
+                // Try traditional format
+                this.position = 0;
+                this.log('\nTrying traditional ACV format...');
+                decoded = this.decodeTraditionalFormat();
+                
+                if (!decoded) {
+                    // Try extended format
+                    this.position = 0;
+                    this.log('\nTrying extended format...');
+                    decoded = this.decodeExtendedFormat();
+                }
+                
+                if (!decoded) {
+                    throw new Error('Could not decode ACV file. The format may be unsupported.');
+                }
+                
+                return this.curves;
+            }
+            
+            decodeTraditionalFormat() {
+                const version = this.readShort();
+                if (version === null) return false;
+                
+                this.log(`Version: ${version}`);
+                
+                if (version !== 1 && version !== 4) {
+                    this.log(`Not traditional format (version=${version})`);
+                    return false;
+                }
+                
+                const curveCount = this.readShort();
+                if (curveCount === null || curveCount > 5) {
+                    this.log(`Invalid curve count: ${curveCount}`);
+                    return false;
+                }
+                
+                this.log(`Curve count: ${curveCount}`);
+                this.curves = [];
+                
+                for (let i = 0; i < curveCount; i++) {
+                    this.log(`Reading curve ${i}...`);
+                    
+                    const pointCount = this.readShort();
+                    if (pointCount === null || pointCount > 20) {
+                        this.log(`Invalid point count for curve ${i}: ${pointCount}`);
+                        return false;
+                    }
+                    
+                    this.log(`  Point count: ${pointCount}`);
+                    
+                    const points = [];
+                    for (let j = 0; j < pointCount; j++) {
+                        const output = this.readShort();
+                        const input = this.readShort();
+                        
+                        if (output === null || input === null) {
+                            this.log(`Could not read point ${j}`);
+                            return false;
+                        }
+                        
+                        if (input > 255 || output > 255) {
+                            this.log(`Values out of range: input=${input}, output=${output}`);
+                            return false;
+                        }
+                        
+                        points.push({
+                            input: input / 255.0,
+                            output: output / 255.0,
+                            rawInput: input,
+                            rawOutput: output
+                        });
+                        
+                        this.log(`    Point ${j}: (${input}, ${output})`);
+                    }
+                    
+                    // Sort points by input value
+                    points.sort((a, b) => a.input - b.input);
+                    this.curves.push(points);
+                }
+                
+                return true;
+            }
+            
+            decodeExtendedFormat() {
+                // Check for 8BIM signature
+                const sig = new Uint8Array(this.buffer.slice(0, 4));
+                const signature = String.fromCharCode(...sig);
+                
+                if (signature === '8BIM') {
+                    this.log('Found 8BIM signature');
+                    this.position = 16; // Skip header
+                }
+                
+                // Try reading as 32-bit values
+                const version = this.readInt();
+                if (version === null) return false;
+                
+                if (version === 1 || version === 4) {
+                    const curveCount = this.readInt();
+                    if (curveCount === null || curveCount > 5) return false;
+                    
+                    this.curves = [];
+                    
+                    for (let i = 0; i < curveCount; i++) {
+                        const pointCount = this.readInt();
+                        if (pointCount === null || pointCount > 20) return false;
+                        
+                        const points = [];
+                        for (let j = 0; j < pointCount; j++) {
+                            let output = this.readInt();
+                            let input = this.readInt();
+                            
+                            if (output === null || input === null) return false;
+                            
+                            // Normalize if values are 16-bit stored in 32-bit
+                            if (input > 255) input = input >> 8;
+                            if (output > 255) output = output >> 8;
+                            
+                            points.push({
+                                input: input / 255.0,
+                                output: output / 255.0,
+                                rawInput: input,
+                                rawOutput: output
+                            });
+                        }
+                        
+                        points.sort((a, b) => a.input - b.input);
+                        this.curves.push(points);
+                    }
+                    
+                    return true;
+                }
+                
+                return false;
+            }
+            
+            generateFFMPEGParams() {
+                if (this.curves.length === 0) {
+                    throw new Error('No curves data available');
+                }
+                
+                const channelNames = ['master', 'r', 'g', 'b', 'a'];
+                const filterParts = [];
+                
+                this.curves.forEach((curve, index) => {
+                    if (index >= channelNames.length) return;
+                    
+                    const channelName = channelNames[index];
+                    
+                    // Skip if curve is linear
+                    if (this.isLinearCurve(curve)) return;
+                    
+                    const pointStrings = curve.map(point => {
+                        const inp = point.input.toFixed(4).replace(/\.?0+$/, '') || '0';
+                        const out = point.output.toFixed(4).replace(/\.?0+$/, '') || '0';
+                        return `${inp}/${out}`;
+                    });
+                    
+                    filterParts.push(`${channelName}='${pointStrings.join(' ')}'`);
+                });
+                
+                if (filterParts.length === 0) {
+                    return '# No curve adjustments needed (all curves are linear)';
+                }
+                
+                return 'curves=' + filterParts.join(':');
+            }
+            
+            isLinearCurve(curve) {
+                if (curve.length !== 2) return false;
+                
+                return (
+                    Math.abs(curve[0].input) < 0.001 &&
+                    Math.abs(curve[0].output) < 0.001 &&
+                    Math.abs(curve[1].input - 1) < 0.001 &&
+                    Math.abs(curve[1].output - 1) < 0.001
+                );
+            }
+            
+            drawCurves(canvasId) {
+                const canvas = document.getElementById(canvasId);
+                const ctx = canvas.getContext('2d');
+                const width = canvas.width;
+                const height = canvas.height;
+                
+                // Clear canvas
+                ctx.fillStyle = '#f8f8f8';
+                ctx.fillRect(0, 0, width, height);
+                
+                // Draw grid
+                ctx.strokeStyle = '#ddd';
+                ctx.lineWidth = 1;
+                for (let i = 0; i <= 10; i++) {
+                    const x = (width / 10) * i;
+                    const y = (height / 10) * i;
+                    ctx.beginPath();
+                    ctx.moveTo(x, 0);
+                    ctx.lineTo(x, height);
+                    ctx.stroke();
+                    ctx.beginPath();
+                    ctx.moveTo(0, y);
+                    ctx.lineTo(width, y);
+                    ctx.stroke();
+                }
+                
+                // Draw diagonal
+                ctx.strokeStyle = '#ccc';
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.moveTo(0, height);
+                ctx.lineTo(width, 0);
+                ctx.stroke();
+                
+                // Colors for different channels
+                const colors = ['#333', '#ff4444', '#44ff44', '#4444ff', '#ff44ff'];
+                const channelNames = ['Master', 'Red', 'Green', 'Blue', 'Alpha'];
+                
+                // Draw curves
+                this.curves.forEach((curve, index) => {
+                    if (index >= colors.length) return;
+                    
+                    ctx.strokeStyle = colors[index];
+                    ctx.lineWidth = 2;
+                    ctx.beginPath();
+                    
+                    curve.forEach((point, i) => {
+                        const x = point.input * width;
+                        const y = height - (point.output * height);
+                        
+                        if (i === 0) {
+                            ctx.moveTo(x, y);
+                        } else {
+                            ctx.lineTo(x, y);
+                        }
+                    });
+                    
+                    ctx.stroke();
+                    
+                    // Draw points
+                    ctx.fillStyle = colors[index];
+                    curve.forEach(point => {
+                        const x = point.input * width;
+                        const y = height - (point.output * height);
+                        ctx.beginPath();
+                        ctx.arc(x, y, 4, 0, Math.PI * 2);
+                        ctx.fill();
+                    });
+                });
+                
+                // Draw legend
+                ctx.font = '12px Arial';
+                let legendY = 20;
+                this.curves.forEach((curve, index) => {
+                    if (index >= channelNames.length) return;
+                    ctx.fillStyle = colors[index];
+                    ctx.fillRect(10, legendY - 10, 15, 10);
+                    ctx.fillStyle = '#333';
+                    ctx.fillText(channelNames[index], 30, legendY);
+                    legendY += 20;
+                });
+            }
+        }
+        
+        // UI Functions
+        function processFile(file) {
+            const reader = new FileReader();
+            const debugMode = document.getElementById('debugMode').checked;
+            
+            reader.onload = function(e) {
+                try {
+                    const decoder = new ACVDecoder(e.target.result, debugMode);
+                    const curves = decoder.decode();
+                    const ffmpegParams = decoder.generateFFMPEGParams();
+                    
+                    displayResults(file.name, curves, ffmpegParams, decoder);
+                } catch (error) {
+                    displayError(error.message);
+                }
+            };
+            
+            reader.readAsArrayBuffer(file);
+        }
+        
+        function displayResults(filename, curves, ffmpegParams, decoder) {
+            const channelNames = ['Master', 'Red', 'Green', 'Blue', 'Alpha'];
+            
+            let html = `
+                <div class="result-section">
+                    <h2>📁 File: ${filename}</h2>
+                    <p>Successfully decoded ${curves.length} curve(s)</p>
+                </div>
+                
+                <div class="result-section">
+                    <h2>🎬 FFMPEG Parameters</h2>
+                    <div class="command">
+                        <button class="copy-btn" onclick="copyToClipboard(this, 'ffmpegParams')">Copy</button>
+                        <span id="ffmpegParams">${escapeHtml(ffmpegParams)}</span>
+                    </div>
+                    
+                    <h3>Example Commands:</h3>
+                    ${ffmpegParams.startsWith('#') ? 
+                        '<p>No curve adjustments needed (all curves are linear)</p>' :
+                        `<div class="command">
+                            <button class="copy-btn" onclick="copyToClipboard(this, 'ffmpegCmd1')">Copy</button>
+                            <span id="ffmpegCmd1">ffmpeg -i input.mp4 -vf "${escapeHtml(ffmpegParams)}" output.mp4</span>
+                        </div>
+                        
+                        <p style="margin-top: 10px;">With additional color adjustments:</p>
+                        <div class="command">
+                            <button class="copy-btn" onclick="copyToClipboard(this, 'ffmpegCmd2')">Copy</button>
+                            <span id="ffmpegCmd2">ffmpeg -i input.mp4 -vf "${escapeHtml(ffmpegParams)},eq=brightness=0.1:saturation=1.2" output.mp4</span>
+                        </div>`
+                    }
+                </div>
+                
+                <div class="result-section">
+                    <h2>📊 Curve Visualization</h2>
+                    <div class="canvas-container">
+                        <canvas id="curveCanvas" width="400" height="400"></canvas>
+                    </div>
+                </div>
+                
+                <div class="result-section">
+                    <h2>📋 Curve Details</h2>
+                    <div class="curve-info">
+                        ${curves.map((curve, index) => `
+                            <div class="curve-channel">
+                                <h4>${channelNames[index] || `Channel ${index}`}</h4>
+                                <div class="point-list">
+                                    ${curve.map((point, i) => `
+                                        <div class="point-item">
+                                            Point ${i + 1}: (${point.rawInput}, ${point.rawOutput}) 
+                                            → (${point.input.toFixed(4)}, ${point.output.toFixed(4)})
+                                        </div>
+                                    `).join('')}
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            `;
+            
+            if (decoder.debug && decoder.debugLog.length > 0) {
+                html += `
+                    <div class="result-section">
+                        <h2>🔍 Debug Output</h2>
+                        <div class="debug-output">${decoder.debugLog.join('\n')}</div>
+                    </div>
+                `;
+            }
+            
+            document.getElementById('results').innerHTML = html;
+            document.getElementById('results').style.display = 'block';
+            
+            // Draw curves
+            setTimeout(() => {
+                decoder.drawCurves('curveCanvas');
+            }, 100);
+        }
+        
+        function displayError(message) {
+            document.getElementById('results').innerHTML = `
+                <div class="error">
+                    <h3>⚠️ Error</h3>
+                    <p>${escapeHtml(message)}</p>
+                    <p style="margin-top: 10px;">Try enabling debug mode for more information.</p>
+                </div>
+            `;
+            document.getElementById('results').style.display = 'block';
+        }
+        
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+        
+        function copyToClipboard(button, elementId) {
+            const text = document.getElementById(elementId).textContent;
+            navigator.clipboard.writeText(text).then(() => {
+                button.textContent = 'Copied!';
+                button.classList.add('copied');
+                setTimeout(() => {
+                    button.textContent = 'Copy';
+                    button.classList.remove('copied');
+                }, 2000);
+            });
+        }
+        
+        // Event Listeners
+        const uploadArea = document.getElementById('uploadArea');
+        const fileInput = document.getElementById('fileInput');
+        
+        fileInput.addEventListener('change', (e) => {
+            if (e.target.files.length > 0) {
+                processFile(e.target.files[0]);
+            }
+        });
+        
+        // Drag and drop
+        uploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadArea.classList.add('dragover');
+        });
+        
+        uploadArea.addEventListener('dragleave', () => {
+            uploadArea.classList.remove('dragover');
+        });
+        
+        uploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadArea.classList.remove('dragover');
+            
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                const file = files[0];
+                if (file.name.toLowerCase().endsWith('.acv')) {
+                    processFile(file);
+                } else {
+                    displayError('Please select a valid .acv file');
+                }
+            }
+        });
+        
+        // Click to upload
+        uploadArea.addEventListener('click', (e) => {
+            if (e.target !== fileInput && !e.target.classList.contains('upload-label')) {
+                fileInput.click();
+            }
+        });
+    </script>
+</body>
+</html>
