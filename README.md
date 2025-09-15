@@ -36,6 +36,8 @@ Visit: https://trebla.github.io/acv-to-ffmpeg-converter/
 ## 💡 Example Output
 ```bash
 ffmpeg -i input.mp4 -vf "curves=master='0/0 0.25/0.3 0.5/0.5 0.75/0.7 1/1'" output.mp4
+```
+
 # Example ACV Files
 
 This folder contains sample Adobe Curve (.acv) files for testing the converter.
