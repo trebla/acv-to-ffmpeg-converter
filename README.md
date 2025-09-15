@@ -47,11 +47,18 @@ This folder contains sample Adobe Curve (.acv) files for testing the converter.
 Color correction underwater webcam
 
 
-
-| Before | After |
-|:------:|:-----:|
-| ![Before](examples/before.jpg) | ![After](examples/after.jpg) |
-
+<div align="center">
+  <table>
+    <tr>
+      <td align="center"><b>Before</b></td>
+      <td align="center"><b>After</b></td>
+    </tr>
+    <tr>
+      <td><img src="examples/before.jpg" width="400" alt="Before"></td>
+      <td><img src="examples/after.jpg" width="400" alt="After"></td>
+    </tr>
+  </table>
+</div>
 
 
 ## How to Create Your Own ACV Files
